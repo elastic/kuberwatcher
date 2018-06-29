@@ -1,5 +1,7 @@
 # Kuberwatcher
 
+[![Build Status](https://img.shields.io/jenkins/s/https/devops-ci.elastic.co/job/elastic+kuberwatcher+master.svg)](https://devops-ci.elastic.co/job/elastic+kuberwatcher+master/)
+
 This is a small python script that will generate separate watches for each group of pods.
 If you have a namespace called `test` and a deployment called `nginx` and `elasticsearch` this script will automagically create watches called `test.nginx` and `test.elasticsearch` which will send email and or slack alerts if any of the pods in these deployments are not ready. 
 
