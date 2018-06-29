@@ -1,0 +1,4 @@
+[report]
+omit =
+    venv/*
+    insert_test_data.py

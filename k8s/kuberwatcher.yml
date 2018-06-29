@@ -1,0 +1,66 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kuberwatcher
+data:
+  kuberwatcher.yml: |-
+    ---
+    alerts.email: watcher@example.com
+    alerts.slack: alerts
+    kibana_url: https://kibana.example.com
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: kuberwatcher
+spec:
+  schedule: '*/5 * * * *'
+  concurrencyPolicy: Forbid
+  failedJobsHistoryLimit: 3
+  successfulJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      metadata:
+        labels:
+          watcher: enabled
+      template:
+        spec:
+          containers:
+          - name: kuberwatcher
+            image: docker.elastic.co/kuberwatcher/kuberwatcher:6.3.0
+            env:
+            - name: ES_HOSTS
+              valueFrom:
+                secretKeyRef:
+                  key: endpoint
+                  name: kuberwatcher
+            - name: ES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: kuberwatcher
+            - name: ES_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: username
+                  name: kuberwatcher
+            resources:
+              limits:
+                cpu: 100m
+                memory: 100Mi
+              requests:
+                cpu: 100m
+                memory: 100Mi
+            volumeMounts:
+            - mountPath: /usr/src/app/kuberwatcher.yml
+              name: kuberwatcher
+              subPath: kuberwatcher.yml
+          restartPolicy: Never
+          serviceAccount: kuberwatcher
+          serviceAccountName: kuberwatcher
+          volumes:
+          - configMap:
+            name: kuberwatcher
+              name: kuberwatcher
+              defaultMode: 420

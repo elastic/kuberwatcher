@@ -1,0 +1,52 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: disabled
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  annotations:
+  labels:
+    run: nginx
+  name: nginx
+  namespace: disabled
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: nginx
+  template:
+    metadata:
+      labels:
+        watcher: enabled
+        run: nginx
+    spec:
+      containers:
+      - image: nginx
+        imagePullPolicy: Always
+        name: nginx
+        resources: {}
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  annotations:
+  labels:
+    run: disabled
+  name: disabled
+  namespace: disabled
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: disabled
+  template:
+    metadata:
+      labels:
+        run: disabled
+    spec:
+      containers:
+      - image: nginx
+        name: nginx

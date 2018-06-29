@@ -1,0 +1,3 @@
+elasticsearch-xpack==5.4.0
+certifi==2017.11.5
+kubernetes==4.0.0

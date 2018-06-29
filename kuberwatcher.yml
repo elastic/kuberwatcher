@@ -1,0 +1,3 @@
+alerts.email: 'michael.russell@elastic.co'
+alerts.slack: '@michael.russell'
+kibana_url: 'https://kibana.example.com'
