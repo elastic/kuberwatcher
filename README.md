@@ -119,13 +119,13 @@ make run
 
 ### Run kuberwatcher in kubernetes
 
-There is an example in [k8s/kubernetes.yml](./k8s/kubernetes.yml) for running kuberwatcher as a CronJob in kubernetes.
+There is an example in [k8s/kuberwatcher.yml](./k8s/kuberwatcher.yml) for running kuberwatcher as a CronJob in kubernetes.
 
 * Create the secrets for kuberwatcher to connect to Elasticsearch
 ```
 kubectl create secret generic kuberwatcher --from-literal=endpoint=http://elasticsearch:9200 --from-literal=password=changeme --from-literal=username=elastic
 ```
-* Modify the configuration in the configmap defined in [k8s/kubernetes.yml](./k8s/kubernetes.yml)
+* Modify the configuration in the configmap defined in [k8s/kuberwatcher.yml](./k8s/kuberwatcher.yml)
 * Deploy!
 ```
 kubectl apply -f k8s/kuberwatcher.yml
