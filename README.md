@@ -13,7 +13,7 @@ An alert will be sent if a single pod is not ready for 2 minutes in a 5 minute w
 
 ## Cronjobs
 
-An alert will be sent if a cronjob fails 2 times in a row. This can behavior can be changed by modifying the `job_failures`
+An alert will be sent if a cronjob fails 2 times in a row. This behavior can be changed by modifying the `job_failures`
 
 
 # Enabling monitoring
