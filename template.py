@@ -26,7 +26,10 @@ k8s_template = {
     "regex": "",
     "kibana_url": "",
     "kibana_dashboard": "",
-    "docs": ""
+    "docs": "",
+    "xpack" : {
+        "type" : "json"
+     },
   },
   "trigger": {
     "schedule": {
