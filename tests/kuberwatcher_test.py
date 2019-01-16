@@ -434,8 +434,9 @@ def test_sending_a_watch_to_watcher():
     assert 'metricbeat' in watches
     assert watches['metricbeat']['metadata']['message'] == 'No metricbeat data has been recieved in the last 5 minutes! <https://kibana.example.com|kibana>'
     assert watches['metricbeat']['actions']['email_admin']['email']['to'] == ['michael.russell@elastic.co']
+    assert watches['metricbeat']['actions']['email_admin']['throttle_period_in_millis'] == 3600000
 
-    # When sending the watches again they should be be updated
+    # When sending the watches again they should not be updated
     current_watches = get_current_watches(es)
     updated = send_watches(watches, current_watches, es)
     assert len(updated) == 0

@@ -89,8 +89,6 @@ def render_template(
 
     template['input']['search']['request']['body']['aggs']['not_ready']['terms']['min_doc_count'] = failures
     template['trigger']['schedule']['interval'] = interval
-    template['actions']['notify-slack']['throttle_period_in_millis'] = throttle
-    template['actions']['email_admin']['throttle_period_in_millis'] = throttle
     template['metadata']['name'] = name
     template['metadata']['namespace'] = namespace
     template['metadata']['window'] = window
@@ -98,7 +96,7 @@ def render_template(
     template['metadata']['docs'] = docs
     template['metadata']['regex'] = urllib.parse.quote_plus(regex)
 
-    return add_alerts(template, alerts, reply_to)
+    return add_alerts(template, alerts, throttle, reply_to)
 
 
 kind_dashes_map = {
@@ -112,9 +110,10 @@ kind_dashes_map = {
 def base_name(name, kind):
     return name.rsplit('-', kind_dashes_map[kind])[0]
 
-def add_alerts(template, alerts, reply_to=None):
+def add_alerts(template, alerts, throttle, reply_to=None):
     if 'email' in alerts:
         template['actions']['email_admin']['email']['to'] = alerts['email'].split(',')
+        template['actions']['email_admin']['throttle_period_in_millis'] = throttle
         if reply_to:
             template['actions']['email_admin']['email']['reply_to'] = reply_to.split(',')
     else:
@@ -122,6 +121,7 @@ def add_alerts(template, alerts, reply_to=None):
 
     if 'slack' in alerts:
         template['actions']['notify-slack']['slack']['message']['to'] = alerts['slack'].split(',')
+        template['actions']['notify-slack']['throttle_period_in_millis'] = throttle
     else:
         del template['actions']['notify-slack']
 
@@ -245,7 +245,7 @@ def main(es, defaults):
     namespaces = get_namespaces(defaults)
     pods = get_all_pods(namespaces)
     watches = generate_watch(pods)
-    watches['metricbeat'] = add_alerts(metricbeat_template, defaults['alerts'], defaults.get('reply_to', None))
+    watches['metricbeat'] = add_alerts(metricbeat_template, defaults['alerts'], defaults.get('throttle', 3600000), defaults.get('reply_to', None))
     watches['metricbeat']['metadata']['message'] = 'No metricbeat data has been recieved in the last 5 minutes! <{0}|kibana>'.format(defaults['kibana_url'])
     return watches
 
