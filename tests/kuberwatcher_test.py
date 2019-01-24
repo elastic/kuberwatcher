@@ -47,65 +47,6 @@ def test_template_that_isnt_a_job():
     template = render_template(**watch)
     assert template['input']['search']['request']['body']['query']['bool']['must_not'][0]['match'] == {'kubernetes.pod.status.ready': 'true'}
 
-def test_template_slack_alerts_no_email():
-    watch = {
-        'name': 'namespace.podgroup',
-        'regex': 'pod-.*',
-        'namespace': 'namespace',
-        'pod_type': 'replicaset',
-        'alerts': {
-            'slack': '@username,slackteam'
-        }
-    }
-    template = render_template(**watch)
-    assert template['actions']['notify-slack']['slack']['message']['to'] == ['@username', 'slackteam']
-    assert 'email_admin' not in template['actions']
-
-def test_template_email_alerts_no_slack():
-    watch = {
-        'name': 'namespace.podgroup',
-        'regex': 'pod-.*',
-        'namespace': 'namespace',
-        'pod_type': 'replicaset',
-        'alerts': {
-            'email': 'michael.russell@elastic.co,team@elastic.co'
-        }
-    }
-    template = render_template(**watch)
-    assert template['actions']['email_admin']['email']['to'] == ['michael.russell@elastic.co', 'team@elastic.co']
-    assert 'notify-slack' not in template['actions']
-    assert 'reply_to' not in template['actions']['email_admin']['email']
-
-def test_template_email_alerts_with_reply_to_set():
-    watch = {
-        'name': 'namespace.podgroup',
-        'regex': 'pod-.*',
-        'namespace': 'namespace',
-        'pod_type': 'replicaset',
-        'reply_to': 'reply@elastic.co',
-        'alerts': {
-            'email': 'michael.russell@elastic.co,team@elastic.co'
-        }
-    }
-    template = render_template(**watch)
-    assert template['actions']['email_admin']['email']['to'] == ['michael.russell@elastic.co', 'team@elastic.co']
-    assert template['actions']['email_admin']['email']['reply_to'] == ['reply@elastic.co']
-
-def test_template_email_and_slack():
-    watch = {
-        'name': 'namespace.podgroup',
-        'regex': 'pod-.*',
-        'namespace': 'namespace',
-        'pod_type': 'replicaset',
-        'alerts': {
-            'email': 'michael.russell@elastic.co,team@elastic.co',
-            'slack': '@username,slackteam'
-        }
-    }
-    template = render_template(**watch)
-    assert template['actions']['email_admin']['email']['to'] == ['michael.russell@elastic.co', 'team@elastic.co']
-    assert template['actions']['notify-slack']['slack']['message']['to'] == ['@username', 'slackteam']
-
 def test_unflattening_a_yaml_config_from_kubernetes():
     config = '''
 watcher.hello: 'hello'
@@ -434,8 +375,50 @@ def test_sending_a_watch_to_watcher():
     assert 'metricbeat' in watches
     assert watches['metricbeat']['metadata']['message'] == 'No metricbeat data has been recieved in the last 5 minutes! <https://kibana.example.com|kibana>'
     assert watches['metricbeat']['actions']['email_admin']['email']['to'] == ['michael.russell@elastic.co']
+    assert watches['metricbeat']['actions']['email_admin']['throttle_period_in_millis'] == 3600000
 
-    # When sending the watches again they should be be updated
+    # When sending the watches again they should not be updated
     current_watches = get_current_watches(es)
     updated = send_watches(watches, current_watches, es)
     assert len(updated) == 0
+
+def test_add_alerts():
+    alerts = {
+        "email": "michael.russell@elastic.co,micky@elastic.co",
+        "slack": "@michael.russell,@micky"
+    }
+    result = add_alerts(copy.deepcopy(metricbeat_template), alerts, 0)
+    assert result['actions']['email_admin']['email']['to'] == ['michael.russell@elastic.co', 'micky@elastic.co']
+    assert result['actions']['notify-slack']['slack']['message']['to'] == ['@michael.russell', '@micky']
+
+def test_add_alerts_with_only_slack():
+    alerts = {
+        "slack": "@michael.russell"
+    }
+    result = add_alerts(copy.deepcopy(metricbeat_template), alerts, 0)
+    assert 'email_admin' not in result['actions']
+    assert result['actions']['notify-slack']['slack']['message']['to'] == ['@michael.russell']
+
+def test_add_alerts_with_only_email():
+    alerts = {
+        "email": "michael.russell@elastic.co",
+    }
+    result = add_alerts(copy.deepcopy(metricbeat_template), alerts, 0)
+    assert 'notify-slack' not in result['actions']
+    assert result['actions']['email_admin']['email']['to'] == ['michael.russell@elastic.co']
+
+def test_add_alerts_with_reply_to():
+    alerts = {
+        "email": "michael.russell@elastic.co",
+    }
+    result = add_alerts(copy.deepcopy(metricbeat_template), alerts, 0, 'reply@elastic.co')
+    assert 'notify-slack' not in result['actions']
+    assert result['actions']['email_admin']['email']['to'] == ['michael.russell@elastic.co']
+    assert result['actions']['email_admin']['email']['reply_to'] == ['reply@elastic.co']
+
+def test_add_alerts_with_overriden_throttle_period():
+    alerts = {
+        "email": "michael.russell@elastic.co"
+    }
+    result = add_alerts(copy.deepcopy(metricbeat_template), alerts, 123456)
+    assert result['actions']['email_admin']['throttle_period_in_millis'] == 123456
