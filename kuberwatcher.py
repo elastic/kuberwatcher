@@ -58,20 +58,32 @@ def render_template(
     template['input']['search']['request']['body']['query']['bool']['must'].append({'match': {'metricset.name': 'state_pod'}})
 
     if pod_type == 'job':
-        # Only return the amount of failures we care about. With the default amount of 2 we will get 2 results. If all of these results have failed we will send an alert
-        template['input']['search']['request']['body']['size'] = job_failures
-
         # Filter out running and pending jobs since we just want to find the latest completed results
         template['input']['search']['request']['body']['query']['bool']['must_not'].append({'match': {'kubernetes.pod.status.phase': 'running'}})
         template['input']['search']['request']['body']['query']['bool']['must_not'].append({'match': {'kubernetes.pod.status.phase': 'pending'}})
-
-        # Cronjob pods contain a unix timestamp in their name. By sorting the pods by name we can get the most recent jobs at the top of the results
-        template['input']['search']['request']['body']['sort'] = [{"kubernetes.pod.name" : {"order" : "desc", "mode" : "max"}}]
+        template['input']['search']['request']['body']['aggs']['jobs'] = {
+            "terms": {
+                "field": "kubernetes.pod.name",
+                # Only return the amount of failures we care about. With the default amount of 2 we will get 2 results. If all of these results have failed we will send an alert
+                "size": job_failures, 
+                # Cronjob pods contain a unix timestamp in their name. By sorting the pods by name we can get the most recent jobs at the top of the results
+                "order": {
+                  "_key": "desc"
+                }
+            },
+            "aggs": {
+                "result": {
+                    "top_hits": {
+                        "size": 1
+                    }
+                }
+            }
+        }
         template['condition'] = {
             "script" : {
                 "lang": "painless",
                 # Alert if there aren't any succesful jobs in our result. The default value of 2 means we need 2 failed jobs in a row before alerting 
-                "source" : "for (h in ctx.payload.hits.hits) { if (h._source.kubernetes.pod.status.phase == 'succeeded') return false; } return true;"
+                "source" : "for (h in ctx.payload.aggregations.jobs.buckets) { if (h.result.hits.hits.0._source.kubernetes.pod.status.phase == 'succeeded') return false; } return true;"
             }
         }
 
