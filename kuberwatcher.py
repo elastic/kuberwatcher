@@ -232,13 +232,29 @@ def send_watches(watches, current_watches, es):
             updated.append(watch)
     return updated
 
+def es_connection_config():
+    es_hosts = os.environ.get('ES_HOSTS', 'http://elasticsearch:9200')
+    es_client_cert_path = os.environ.get('ES_CLIENT_CERT_PATH')
+    ca_cert_path = os.environ.get('ES_CA_CERTS', certifi.where())
+
+    es_client_kwargs = dict(
+        http_auth=(
+            os.environ.get('ES_USERNAME','elastic'),
+            os.environ.get('ES_PASSWORD','changeme')
+        ),
+        ca_certs=ca_cert_path
+    )
+
+    if es_client_cert_path:
+        es_client_kwargs.pop('http_auth')
+        es_client_kwargs['client_cert'] = es_client_cert_path
+        es_client_kwargs['client_key'] = os.environ.get('ES_CLIENT_KEY_PATH')
+
+    return es_hosts, es_client_kwargs
+
 def connect_to_es():
-    es = Elasticsearch(
-            [os.environ.get('ES_HOSTS','http://elasticsearch:9200')],
-            http_auth=(os.environ.get('ES_USERNAME','elastic'), os.environ.get('ES_PASSWORD','changeme')),
-            ca_certs=certifi.where()
-            )
-    return es
+    es_hosts, es_client_kwargs = es_connection_config()
+    return Elasticsearch([es_hosts], **es_client_kwargs)
 
 def main(es, defaults):
     load_config()
