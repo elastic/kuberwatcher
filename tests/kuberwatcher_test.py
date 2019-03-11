@@ -2,6 +2,7 @@ from kuberwatcher import *
 import pystache
 import pytest
 import vcr
+import certifi
 
 my_vcr = vcr.VCR(
     cassette_library_dir='tests/cassettes',
@@ -422,3 +423,36 @@ def test_add_alerts_with_overriden_throttle_period():
     }
     result = add_alerts(copy.deepcopy(metricbeat_template), alerts, 123456)
     assert result['actions']['email_admin']['throttle_period_in_millis'] == 123456
+
+def test_es_client_config_with_client_cert_path(monkeypatch):
+    mock_client_cert_path = 'path/to/client.pem'
+    monkeypatch.setitem(os.environ, 'ES_CLIENT_CERT_PATH', mock_client_cert_path)
+    es_hosts, es_client_kwargs = es_connection_config()
+
+    assert es_client_kwargs.get('client_cert') == mock_client_cert_path
+    assert es_client_kwargs.get('client_key') == None
+    assert es_client_kwargs.get('http_auth') == None
+
+def test_es_client_config_with_client_cert_and_key_path(monkeypatch):
+    mock_client_cert_path = '/path/to/client.pem'
+    mock_client_key_path = '/path/to/client.key'
+    monkeypatch.setitem(os.environ, 'ES_CLIENT_CERT_PATH', mock_client_cert_path)
+    monkeypatch.setitem(os.environ, 'ES_CLIENT_KEY_PATH', mock_client_key_path)
+    es_hosts, es_client_kwargs = es_connection_config()
+
+    assert es_client_kwargs.get('client_cert') == mock_client_cert_path
+    assert es_client_kwargs.get('client_key') == mock_client_key_path
+    assert es_client_kwargs.get('http_auth') == None
+
+def test_es_client_config_without_ca_certs_set():
+    expected_ca_cert_path = certifi.where()
+    es_hosts, es_client_kwargs = es_connection_config()
+
+    assert es_client_kwargs.get('ca_certs') == expected_ca_cert_path
+
+def test_es_client_config_with_ca_certs_set(monkeypatch):
+    mock_ca_cert_path = '/path/to/ca.pem'
+    monkeypatch.setitem(os.environ, 'ES_CA_CERTS', mock_ca_cert_path)
+    es_hosts, es_client_kwargs = es_connection_config()
+
+    assert es_client_kwargs.get('ca_certs') == mock_ca_cert_path
