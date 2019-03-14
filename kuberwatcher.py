@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
-from kubernetes import client, config
+from kubernetes import client as kube_client, config as kube_config
 from collections import defaultdict
 import json
 import urllib.parse
 from elasticsearch import Elasticsearch
+from elasticsearch.client.xpack import XPackClient
 from elasticsearch.exceptions import NotFoundError
-from elasticsearch_xpack import XPackClient
 from template import k8s_template, metricbeat_template
 import certifi
 import copy
@@ -128,7 +128,7 @@ def add_alerts(template, alerts, throttle, reply_to=None):
     return template
 
 def get_all_pods(namespaces):
-    v1 = client.CoreV1Api()
+    v1 = kube_client.CoreV1Api()
     kinds = tree()
     ret = v1.list_pod_for_all_namespaces(watch=False,label_selector='watcher!=disabled')
     for i in ret.items:
@@ -177,7 +177,7 @@ def generate_watch(pods):
 
 
 def get_namespaces(defaults):
-    v1 = client.CoreV1Api()
+    v1 = kube_client.CoreV1Api()
     namespaces = {}
     for ns in v1.list_namespace(label_selector='watcher=enabled').items:
         if ns.metadata.annotations:
@@ -195,9 +195,9 @@ def load_config(): # pragma: nocover
     if os.environ.get('CI') == 'true':
         return
     elif os.path.exists('/run/secrets/kubernetes.io/serviceaccount'):
-        config.load_incluster_config()
+        kube_config.load_incluster_config()
     else:
-        config.load_kube_config()
+        kube_config.load_kube_config()
 
 def get_current_watches(es):
     watches = {}
@@ -267,7 +267,7 @@ def main(es, defaults):
 
 if __name__ == "__main__": # pragma: nocover
     es = connect_to_es()
-    defaults = unflatten(yaml.load(open('kuberwatcher.yml')))
+    defaults = unflatten(yaml.full_load(open('kuberwatcher.yml')))
     current_watches = get_current_watches(es)
     watches = main(es, defaults)
     send_watches(watches, current_watches, es)
