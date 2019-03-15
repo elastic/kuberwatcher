@@ -2,18 +2,27 @@ interactions:
 - request:
     body: null
     headers:
-      Accept: [application/json]
-      Content-Type: [application/json]
-      User-Agent: [Swagger-Codegen/4.0.0/python]
+      Accept:
+      - application/json
+      Content-Type:
+      - application/json
+      User-Agent:
+      - Swagger-Codegen/8.0.1/python
     method: GET
-    uri: https://192.168.99.100:8443/api/v1/namespaces?labelSelector=watcher%3Denabled
+    uri: https://192.168.39.133:8443/api/v1/namespaces?labelSelector=watcher%3Denabled
   response:
-    body: {string: '{"kind":"NamespaceList","apiVersion":"v1","metadata":{"selfLink":"/api/v1/namespaces","resourceVersion":"3591"},"items":[{"metadata":{"name":"override","selfLink":"/api/v1/namespaces/override","uid":"e7b83fa7-ed7a-11e8-b807-0800273194db","resourceVersion":"1067","creationTimestamp":"2018-11-21T10:47:56Z","labels":{"watcher":"enabled"},"annotations":{"kubectl.kubernetes.io/last-applied-configuration":"{\"apiVersion\":\"v1\",\"kind\":\"Namespace\",\"metadata\":{\"annotations\":{\"watcher.alerts.slack\":\"@michael.override\"},\"labels\":{\"watcher\":\"enabled\"},\"name\":\"override\",\"namespace\":\"\"}}\n","watcher.alerts.slack":"@michael.override"}},"spec":{"finalizers":["kubernetes"]},"status":{"phase":"Active"}},{"metadata":{"name":"test","selfLink":"/api/v1/namespaces/test","uid":"e7bb89f0-ed7a-11e8-b807-0800273194db","resourceVersion":"1072","creationTimestamp":"2018-11-21T10:47:56Z","labels":{"watcher":"enabled"},"annotations":{"kubectl.kubernetes.io/last-applied-configuration":"{\"apiVersion\":\"v1\",\"kind\":\"Namespace\",\"metadata\":{\"annotations\":{},\"labels\":{\"watcher\":\"enabled\"},\"name\":\"test\",\"namespace\":\"\"}}\n"}},"spec":{"finalizers":["kubernetes"]},"status":{"phase":"Active"}}]}
+    body:
+      string: '{"kind":"NamespaceList","apiVersion":"v1","metadata":{"selfLink":"/api/v1/namespaces","resourceVersion":"19378"},"items":[{"metadata":{"name":"override","selfLink":"/api/v1/namespaces/override","uid":"80297a53-4736-11e9-939b-48cec360726b","resourceVersion":"19125","creationTimestamp":"2019-03-15T15:25:01Z","labels":{"watcher":"enabled"},"annotations":{"kubectl.kubernetes.io/last-applied-configuration":"{\"apiVersion\":\"v1\",\"kind\":\"Namespace\",\"metadata\":{\"annotations\":{\"watcher.alerts.slack\":\"@michael.override\"},\"labels\":{\"watcher\":\"enabled\"},\"name\":\"override\"}}\n","watcher.alerts.slack":"@michael.override"}},"spec":{"finalizers":["kubernetes"]},"status":{"phase":"Active"}},{"metadata":{"name":"test","selfLink":"/api/v1/namespaces/test","uid":"80446315-4736-11e9-939b-48cec360726b","resourceVersion":"19127","creationTimestamp":"2019-03-15T15:25:01Z","labels":{"watcher":"enabled"},"annotations":{"kubectl.kubernetes.io/last-applied-configuration":"{\"apiVersion\":\"v1\",\"kind\":\"Namespace\",\"metadata\":{\"annotations\":{},\"labels\":{\"watcher\":\"enabled\"},\"name\":\"test\"}}\n"}},"spec":{"finalizers":["kubernetes"]},"status":{"phase":"Active"}}]}
 
-'}
+        '
     headers:
-      Content-Length: ['1226']
-      Content-Type: [application/json]
-      Date: ['Wed, 21 Nov 2018 11:15:50 GMT']
-    status: {code: 200, message: OK}
+      Content-Length:
+      - '1191'
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 15 Mar 2019 15:26:52 GMT
+    status:
+      code: 200
+      message: OK
 version: 1

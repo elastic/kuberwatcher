@@ -48,7 +48,8 @@ def render_template(
     interval='30s',
     reply_to=None,
     throttle=3600000,
-    window='300s'
+    window='300s',
+    metricbeat_index_pattern='metricbeat-*',
  ):
 
 
@@ -86,8 +87,10 @@ def render_template(
             }
         }
 
-
     template['input']['search']['request']['body']['aggs']['not_ready']['terms']['min_doc_count'] = failures
+    template['input']['search']['request']['indices'] = [
+        metricbeat_index_pattern
+    ]
     template['trigger']['schedule']['interval'] = interval
     template['metadata']['name'] = name
     template['metadata']['namespace'] = namespace
@@ -261,8 +264,12 @@ def main(es, defaults):
     namespaces = get_namespaces(defaults)
     pods = get_all_pods(namespaces)
     watches = generate_watch(pods)
+
     watches['metricbeat'] = add_alerts(metricbeat_template, defaults['alerts'], defaults.get('throttle', 3600000), defaults.get('reply_to', None))
     watches['metricbeat']['metadata']['message'] = 'No metricbeat data has been recieved in the last 5 minutes! <{0}|kibana>'.format(defaults['kibana_url'])
+    watches['metricbeat']['input']['search']['request']['indices'] = [
+        defaults.get('metricbeat_index_pattern', 'metricbeat-*')
+    ]
     return watches
 
 if __name__ == "__main__": # pragma: nocover
