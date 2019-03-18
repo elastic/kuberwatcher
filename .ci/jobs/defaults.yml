@@ -1,0 +1,45 @@
+---
+
+##### GLOBAL METADATA
+
+- meta:
+    cluster: devops-ci
+
+##### JOB DEFAULTS
+
+- job:
+    logrotate:
+      daysToKeep: 30
+      numToKeep: 100
+    parameters:
+    - string:
+        name: branch_specifier
+        default: master
+        description: the Git branch specifier to build (&lt;branchName&gt;, &lt;tagName&gt;,
+          &lt;commitId&gt;, etc.)
+    properties:
+    - github:
+        url: https://github.com/elastic/kuberwatcher/
+    - inject:
+        properties-content: HOME=$JENKINS_HOME
+    node: linux
+    scm:
+    - git:
+        name: origin
+        credentials-id: f6c7695a-671e-4f4f-a331-acdce44ff9ba
+        reference-repo: /var/lib/jenkins/.git-references/kuberwatcher.git
+        branches:
+        - ${branch_specifier}
+        url: git@github.com:elastic/kuberwatcher.git
+        basedir: ''
+        wipe-workspace: 'True'
+    wrappers:
+    - ansicolor
+    - timeout:
+        type: absolute
+        timeout: 10
+        fail: true
+    - timestamps
+    publishers:
+    - email:
+        recipients: infra-root+build@elastic.co
