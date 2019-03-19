@@ -80,16 +80,17 @@ spec:
 # Configuration
 
 ```
-watcher.alerts.email: 'username@elastic.co,team@elastic.co' # Comma separated list of email addresses
-watcher.alerts.slack: '@michael.russell,infra'              # Comma separated list of `@usernames` and `channelnames`
-watcher.kibana_url    'https://kibana.elastic.co'           # Base URl for generating links to Kibana
-watcher.docs:         'https://example.com/HALP.md'         # Documentation link that will be included in the alert
-watcher.failures:      12                                   # How many failed attempts need to have happened in the current window per pod (optional)
-watcher.jobfailures:   2                                    # How many times a cronjob needs to fail in a row being an alert is sent (optional)
-watcher.interval:     '30s'                                 # How often the query is run (optional)
-watcher.reply_to      'team@elastic.co,reply@elastic.o'     # Comma separated list of email addresses to use for the reply_to field in the email alerts
-watcher.throttle:     600000                                # How often to send the alert in ms (optional)
-watcher.window:       '300s'                                # How long the the pods need to be not ready before alerting (optional)
+watcher.alerts.email:                   'username@elastic.co,team@elastic.co' # Comma separated list of email addresses
+watcher.alerts.slack:                   '@michael.russell,infra'              # Comma separated list of `@usernames` and `channelnames`
+watcher.kibana_url                      'https://kibana.elastic.co'           # Base URl for generating links to Kibana
+watcher.docs:                           'https://example.com/HALP.md'         # Documentation link that will be included in the alert
+watcher.failures:                        12                                   # How many failed attempts need to have happened in the current window per pod (optional)
+watcher.jobfailures:                     2                                    # How many times a cronjob needs to fail in a row being an alert is sent (optional)
+watcher.interval:                       '30s'                                 # How often the query is run (optional)
+watcher.reply_to                        'team@elastic.co,reply@elastic.o'     # Comma separated list of email addresses to use for the reply_to field in the email alerts
+watcher.throttle:                       600000                                # How often to send the alert in ms (optional)
+watcher.window:                         '300s'                                # How long the the pods need to be not ready before alerting (optional)
+watcher.metricbeat_index_pattern:       'metricbeat-*'                        # The Index Pattern to search for Metricbeat metrics (optional)
 ```
 
 # Running Kuberwatcher
