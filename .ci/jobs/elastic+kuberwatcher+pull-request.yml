@@ -1,0 +1,25 @@
+---
+- job:
+    name: elastic+kuberwatcher+pull-request
+    display-name: elastic / kuberwatcher - pull-request
+    description: Pull request testing for kuberwatcher
+    parameters: []
+    scm:
+    - git:
+        branches:
+        - $ghprbActualCommit
+        refspec: +refs/pull/*:refs/remotes/origin/pr/*
+    triggers:
+    - github-pull-request:
+        github-hooks: true
+        org-list:
+        - elastic
+        allow-whitelist-orgs-as-admins: true
+        cancel-builds-on-update: true
+        status-context: devops-ci
+    builders:
+    - shell: |-
+        #!/usr/local/bin/runbld
+        set -euo pipefail
+
+        CI=true make test
