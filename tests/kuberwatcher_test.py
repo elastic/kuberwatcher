@@ -99,7 +99,7 @@ def test_slack_mustache_template():
     event = {
         'ctx': {
             'metadata': {
-                'kibana_url': 'https://kibana.com'
+                'kibana_url': 'https://kibana.com',
             },
             'payload': {
                 'aggregations': {
@@ -135,6 +135,22 @@ def test_conditionally_adding_docs_field_for_slack():
     result = mustache_render(template['actions']['notify-slack']['slack']['message']['text'], event)
     assert '<https://docs.com/doc|[docs]>' in result
 
+def test_customizing_the_metricbeat_index_pattern():
+    watch = {
+        'name': 'namespace.podgroup',
+        'regex': 'pod-.*',
+        'namespace': 'namespace',
+        'pod_type': 'replicaset',
+        'alerts': {
+            'slack': '@username'
+        },
+        'metricbeat_index_pattern': 'some-other-index-pattern'
+    }
+
+    template = render_template(**watch)
+    metricbeat_index_pattern = template['input']['search']['request']['indices'][0]
+    assert metricbeat_index_pattern == 'some-other-index-pattern'
+
 def test_conditionally_not_adding_docs_field_for_slack():
     watch = {
         'name': 'namespace.podgroup',
@@ -169,7 +185,7 @@ def test_email_mustache_template():
     event = {
         'ctx': {
             'metadata': {
-                'kibana_url': 'https://kibana.com'
+                'kibana_url': 'https://kibana.com',
             },
             'payload': {
                 'aggregations': {
@@ -377,6 +393,32 @@ def test_sending_a_watch_to_watcher():
     assert watches['metricbeat']['metadata']['message'] == 'No metricbeat data has been recieved in the last 5 minutes! <https://kibana.example.com|kibana>'
     assert watches['metricbeat']['actions']['email_admin']['email']['to'] == ['michael.russell@elastic.co']
     assert watches['metricbeat']['actions']['email_admin']['throttle_period_in_millis'] == 3600000
+
+    # When sending the watches again they should not be updated
+    current_watches = get_current_watches(es)
+    updated = send_watches(watches, current_watches, es)
+    assert len(updated) == 0
+
+@my_vcr.use_cassette()
+def test_sending_a_watch_to_watcher_with_overridden_metricbeat_index_pattern():
+    defaults = {
+        "kibana_url": "https://kibana.example.com",
+        "alerts": {
+            "email": "michael.russell@elastic.co",
+            "slack": "@michael.russell"
+        },
+        "metricbeat_index_pattern": 'overridden-pattern-*'
+    }
+
+    es = connect_to_es()
+    current_watches = get_current_watches(es)
+    watches = main(es, defaults)
+    updated = send_watches(watches, current_watches, es)
+    assert len(updated) > 0
+    assert 'test.nginx' in watches
+    assert 'metricbeat' in watches
+    assert watches['metricbeat']['input']['search']['request']['indices'][0] == 'overridden-pattern-*'
+    assert watches['test.nginx']['input']['search']['request']['indices'][0] == 'overridden-pattern-*'
 
     # When sending the watches again they should not be updated
     current_watches = get_current_watches(es)
