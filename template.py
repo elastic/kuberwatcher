@@ -43,7 +43,7 @@ k8s_template = {
         "indices": [
           "metricbeat-*"
         ],
-        "types": [],
+        "rest_total_hits_as_int": True,
         "body": {
           "aggs": {
             "result": {
@@ -123,7 +123,7 @@ metricbeat_template = {
         "indices": [
           "metricbeat-*"
         ],
-        "types": [],
+        "rest_total_hits_as_int": True,
         "body": {
           "query": {
             "bool": {

@@ -3,9 +3,9 @@ default: build
 SHELL:=/bin/bash -eu
 export PATH := ./bin:./venv/bin:$(PATH)
 
-VERSION = 6.5.4-1
+VERSION = 7.1.1
 IMAGE = push.docker.elastic.co/kuberwatcher/kuberwatcher:${VERSION}
-STACK_VERSION = 6.5.4
+STACK_VERSION = 7.1.1
 PASSWORD = changeme
 
 build:
@@ -13,14 +13,15 @@ build:
 
 deps:
 	docker rm -f kuberwatcher_es kuberwatcher_kibana || true
-	docker run --name kuberwatcher_es -d -p 9200:9200 -p 9300:9300 -e "xpack.notification.slack.account.monitoring.url=$(SLACK_URL)" -e "ELASTIC_PASSWORD=$(PASSWORD)" -e "xpack.security.enabled=true" -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:$(STACK_VERSION)
+	docker run --rm -i -v $$(pwd):/app -w /app docker.elastic.co/elasticsearch/elasticsearch:$(STACK_VERSION) /bin/sh -c "elasticsearch-keystore create && echo $(PASSWORD) | elasticsearch-keystore add -x bootstrap.password && echo $(SLACK_URL) | elasticsearch-keystore add -x xpack.notification.slack.account.monitoring.secure_url && cp /usr/share/elasticsearch/config/elasticsearch.keystore ./"
+	docker run --name kuberwatcher_es -d -p 9200:9200 -p 9300:9300 -v $(PWD)/elasticsearch.keystore:/usr/share/elasticsearch/config/elasticsearch.keystore -e "ELASTIC_PASSWORD=$(PASSWORD)" -e "xpack.security.enabled=true" -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:$(STACK_VERSION)
 	echo 'Waiting for elasticsearch to start'
-	until curl -Is -u elastic:changeme localhost:9200 ; do printf '.' ; sleep 1; done
+	until curl -Is -u elastic:$(PASSWORD) localhost:9200 ; do printf '.' ; sleep 1; done
 	docker run --name kuberwatcher_kibana --link kuberwatcher_es:elasticsearch -e "ELASTICSEARCH_USERNAME=elastic" -e "ELASTICSEARCH_PASSWORD=$(PASSWORD)" -d -p 5601:5601 docker.elastic.co/kibana/kibana:$(STACK_VERSION)
 	echo 'Waiting for Kibana to start'
-	until curl -Is 'localhost:5601/api/status'; do printf '.'; sleep 1; done
+	until curl -u elastic:$(PASSWORD) -Is 'localhost:5601/api/status'; do printf '.'; sleep 1; done
 	echo 'Activating X-Pack trial license'
-	until curl -Is -XPOST 'localhost:9200/_xpack/license/start_trial?acknowledge=true' ; do printf '.' ; sleep 1; done
+	until curl -u elastic:$(PASSWORD) -Is -XPOST 'localhost:9200/_xpack/license/start_trial?acknowledge=true' ; do printf '.' ; sleep 1; done
 
 run: build
 	docker run --rm -ti -v ${HOME}/.minikube:${HOME}/.minikube -v ~/.kube:/root/.kube/ --link kuberwatcher_es:elasticsearch -v $$(PWD):/app -w /app -e ES_PASSWORD="${ES_PASSWORD}" -e ES_USERNAME="${ES_USERNAME}" -e ES_HOSTS="${ES_HOSTS}" ${IMAGE}
@@ -42,6 +43,7 @@ venv: requirements.txt requirements-dev.txt
 
 clean:
 	docker rm -f kuberwatcher_kibana kuberwatcher_es || true
+	rm -f elasticsearch.keystore || true
 	kubectl delete -f tests/fixtures || true
 	kubectl delete -f https://raw.githubusercontent.com/elastic/beats/v$(STACK_VERSION)/deploy/kubernetes/metricbeat-kubernetes.yaml || true
 
