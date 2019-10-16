@@ -14,7 +14,7 @@ kibana_url = (
         "&_g=(refreshInterval:(display:Off,pause:!f,value:0),"
         "time:(from:now-15m,mode:quick,to:now))"
         )
-watch_url = "{{ctx.metadata.kibana_url}}/app/kibana#/management/elasticsearch/watcher/watches/watch/{{ctx.metadata.name}}"
+watch_url = "{{ctx.metadata.kibana_url}}/app/kibana#/management/elasticsearch/watcher/watches/watch/{{ctx.metadata.name}}/status"
 
 slack_alert_template = "{template_open}*<{kibana_url}|{{{{ctx.metadata.name}}}}>* has `{{{{ctx.payload.aggregations.pods.value}}}}` not ready pod(s) <{watch_url}|[ack]>{{{{#ctx.metadata.docs}}}} <{{{{.}}}}|[docs]>{{{{/ctx.metadata.docs}}}}{template_close}".format(**locals())
 email_alert_template = "{template_open}<a href=\"{kibana_url}\">{{{{ctx.metadata.name}}}}</a> has {{{{ctx.payload.aggregations.pods.value}}}} not ready pod(s) <a href=\"{watch_url}\">[ack]</a>{{{{#ctx.metadata.docs}}}} <a href=\"{{{{.}}}}\">[docs]</a>{{{{/ctx.metadata.docs}}}}{template_close}".format(**locals())
