@@ -77,6 +77,9 @@ def render_template(
         }
 
     else:
+        # Only look at running pods so that we don't accidentally match job pods
+        template['input']['search']['request']['body']['query']['bool']['must'].append({'match': {'kubernetes.pod.status.phase': 'running'}})
+
         template['input']['search']['request']['body']['query']['bool']['must_not'].append({'match': {'kubernetes.pod.status.ready': 'true'}})
         # We want to alert if there are any not ready pods in this group
         template['condition'] = {
