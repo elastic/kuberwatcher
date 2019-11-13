@@ -6,7 +6,7 @@ metadata:
 data:
   kuberwatcher.yml: |-
     ---
-    alerts.email: watcher@example.com
+    alerts.email: example-alert@elastic.co
     alerts.slack: alerts
     kibana_url: https://kibana.example.com
 ---
@@ -15,52 +15,83 @@ kind: CronJob
 metadata:
   name: kuberwatcher
 spec:
-  schedule: '*/5 * * * *'
+  schedule: "*/5 * * * *"
   concurrencyPolicy: Forbid
   failedJobsHistoryLimit: 3
   successfulJobsHistoryLimit: 3
   jobTemplate:
     spec:
-      metadata:
-        labels:
-          watcher: enabled
       template:
         spec:
+          volumes:
+            - name: kuberwatcher
+              configMap:
+                name: kuberwatcher
+                defaultMode: 0600
+            - name: es-certs
+              secret:
+                secretName: quickstart-es-http-certs-public
           containers:
-          - name: kuberwatcher
-            image: docker.elastic.co/kuberwatcher/kuberwatcher:6.3.0
-            env:
-            - name: ES_HOSTS
-              valueFrom:
-                secretKeyRef:
-                  key: endpoint
+            - name: kuberwatcher
+              image: docker.elastic.co/kuberwatcher/kuberwatcher:7.1.1-1
+              env:
+                - name: ES_USERNAME
+                  value: elastic
+                - name: ES_HOSTS
+                  value: https://quickstart-es-http:9200
+                - name: ES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      key: elastic
+                      name: quickstart-es-elastic-user
+                - name: ES_CA_CERTS
+                  value: /mnt/certs/ca.crt
+              resources:
+                limits:
+                  cpu: 100m
+                  memory: 100Mi
+                requests:
+                  cpu: 100m
+                  memory: 100Mi
+              volumeMounts:
+                - name: es-certs
+                  mountPath: /mnt/certs/
+                  readOnly: true
+                - mountPath: /usr/src/app/kuberwatcher.yml
                   name: kuberwatcher
-            - name: ES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  key: password
-                  name: kuberwatcher
-            - name: ES_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  key: username
-                  name: kuberwatcher
-            resources:
-              limits:
-                cpu: 100m
-                memory: 100Mi
-              requests:
-                cpu: 100m
-                memory: 100Mi
-            volumeMounts:
-            - mountPath: /usr/src/app/kuberwatcher.yml
-              name: kuberwatcher
-              subPath: kuberwatcher.yml
+                  subPath: kuberwatcher.yml
           restartPolicy: Never
           serviceAccount: kuberwatcher
           serviceAccountName: kuberwatcher
-          volumes:
-          - configMap:
-            name: kuberwatcher
-              name: kuberwatcher
-              defaultMode: 420
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: kuberwatcher-role
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+      - pods
+    verbs:
+      - get
+      - list
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kuberwatcher
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: kuberwatcher-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kuberwatcher-role
+subjects:
+  - kind: ServiceAccount
+    name: kuberwatcher
+    namespace: # namespace needs to be specified here where Kuberwatcher is running
