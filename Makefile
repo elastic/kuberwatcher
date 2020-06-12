@@ -3,7 +3,7 @@ default: build
 SHELL:=/bin/bash -eu
 export PATH := ./bin:./venv/bin:$(PATH)
 
-VERSION = 7.1.1-1
+VERSION = 7.1.1-2
 IMAGE = push.docker.elastic.co/kuberwatcher/kuberwatcher:${VERSION}
 STACK_VERSION = 7.1.1
 PASSWORD = changeme

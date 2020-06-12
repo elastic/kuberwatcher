@@ -301,27 +301,34 @@ def test_getting_email_alerts_disabled_when_overriding_alerts():
 @my_vcr.use_cassette()
 def test_get_all_pods():
     namespaces = {'test': {}}
-    pods = get_all_pods(namespaces)
+    pods = get_all_pods(namespaces, {})
     assert 'nginx' in pods['replicaset']['test']
+
+@my_vcr.use_cassette()
+def test_get_all_pods_with_global_defaults():
+    defaults = {"kibana_url": "https://kibana.custom.com"}
+    namespaces = {}
+    pods = get_all_pods(namespaces, defaults)
+    assert pods['replicaset']['disabled']['nginx']['kibana_url'] == defaults['kibana_url']
 
 @my_vcr.use_cassette()
 def test_get_all_pods_including_jobs():
     namespaces = {'test': {}}
-    pods = get_all_pods(namespaces)
+    pods = get_all_pods(namespaces, {})
     assert 'replicaset' in pods
     assert 'job' in pods
 
 @my_vcr.use_cassette()
 def test_get_watcher_enabled_without_namespace_enabled():
     namespaces = {}
-    pods = get_all_pods(namespaces)
+    pods = get_all_pods(namespaces, {})
     assert 'nginx' in pods['replicaset']['disabled']
     assert 'disabled' not in pods['replicaset']['disabled']
 
 @my_vcr.use_cassette()
 def test_get_all_pods_with_pods_that_dont_have_created_by():
     namespaces = {'test': {}}
-    pods = get_all_pods(namespaces)
+    pods = get_all_pods(namespaces, {})
     assert 'nginx-pod' not in pods['replicaset']['test']
 
 def test_generate_watch():

@@ -133,7 +133,7 @@ def add_alerts(template, alerts, throttle, reply_to=None):
 
     return template
 
-def get_all_pods(namespaces):
+def get_all_pods(namespaces, defaults):
     v1 = kube_client.CoreV1Api()
     kinds = tree()
     ret = v1.list_pod_for_all_namespaces(watch=False,label_selector='watcher!=disabled')
@@ -154,7 +154,7 @@ def get_all_pods(namespaces):
             kind = kind.lower()
             pod_group_name = base_name(name, kind)
             annotations = unflatten(i.metadata.annotations)
-            config = merge_defaults(namespaces.get(namespace,{}), annotations.get('watcher',{}))
+            config = merge_defaults(namespaces.get(namespace, defaults), annotations.get('watcher', {}))
             kinds[kind][namespace][pod_group_name] = config
         
     return kinds
@@ -265,7 +265,7 @@ def connect_to_es():
 def main(es, defaults):
     load_config()
     namespaces = get_namespaces(defaults)
-    pods = get_all_pods(namespaces)
+    pods = get_all_pods(namespaces, defaults)
     watches = generate_watch(pods)
 
     watches['metricbeat'] = add_alerts(metricbeat_template, defaults['alerts'], defaults.get('throttle', 3600000), defaults.get('reply_to', None))
