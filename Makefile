@@ -3,7 +3,7 @@ default: build
 SHELL:=/bin/bash -eu
 export PATH := ./bin:./venv/bin:$(PATH)
 
-VERSION = 7.1.1-1
+VERSION = 7.1.1-2
 IMAGE = push.docker.elastic.co/kuberwatcher/kuberwatcher:${VERSION}
 STACK_VERSION = 7.1.1
 PASSWORD = changeme
@@ -49,8 +49,7 @@ clean:
 
 test: 
 	export CI=$${CI:-'false'} && \
-	if [[ $$(docker ps -f "name=kuberwatcher_es" --format '{{.Names}}') == "kuberwatcher_es" ]]; then link='--link kuberwatcher_es:elasticsearch'; else link=''; fi ; \
-	docker run $$link --rm -v ${HOME}/.minikube:${HOME}/.minikube -v ~/.kube:/.kube/ --user=$$UID -e CI=$$CI -i -v "$$PWD":/app -w /app python:3.6 /usr/bin/make test-python
+	docker run --net=host -e ES_HOSTS="http://127.0.0.1:9200" -v ~/.kube:/.kube/ --user=$$UID -e CI=$$CI -i -v "$$PWD":/app -w /app python:3.6 /usr/bin/make test-python
 
 fixtures:
 	cluster=$$(kubectl config current-context) && \

@@ -203,7 +203,6 @@ def test_email_mustache_template():
     expected = '''<a href="https://kibana.com/app/kibana#/discover?_a=(columns:!(_source),filters:!(('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'metricbeat-*',key:query,negate:!f,type:custom,value:''),query:(bool:(must:!((regexp:(kubernetes.pod.name:'')),(match:(metricset.name:'state_pod')),(match:(kubernetes.namespace:))))))),index:'metricbeat-*',interval:auto,query:(language:lucene,query:''),regexp:(language:lucene,query:'kubernetes.pod.name:test-nginx-%5B%5E-%5D%20-%5B%5E-%5D%20'),sort:!('@timestamp',desc),time:(from:now%2FM,mode:quick,to:now%2FM))&_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-15m,mode:quick,to:now))">namespace.podgroup</a> has 1 not ready pod(s) <a href="https://kibana.com/app/kibana#/management/elasticsearch/watcher/watches/watch/namespace.podgroup/status">[ack]</a>'''.rstrip()
     assert result == expected
 
-
 def test_conditionally_adding_docs_field_for_email():
     watch = {
         'name': 'namespace.podgroup',
@@ -301,27 +300,34 @@ def test_getting_email_alerts_disabled_when_overriding_alerts():
 @my_vcr.use_cassette()
 def test_get_all_pods():
     namespaces = {'test': {}}
-    pods = get_all_pods(namespaces)
+    pods = get_all_pods(namespaces, {})
     assert 'nginx' in pods['replicaset']['test']
+
+@my_vcr.use_cassette()
+def test_get_all_pods_with_global_defaults():
+    defaults = {"kibana_url": "https://kibana.custom.com"}
+    namespaces = {}
+    pods = get_all_pods(namespaces, defaults)
+    assert pods['replicaset']['disabled']['nginx']['kibana_url'] == defaults['kibana_url']
 
 @my_vcr.use_cassette()
 def test_get_all_pods_including_jobs():
     namespaces = {'test': {}}
-    pods = get_all_pods(namespaces)
+    pods = get_all_pods(namespaces, {})
     assert 'replicaset' in pods
     assert 'job' in pods
 
 @my_vcr.use_cassette()
 def test_get_watcher_enabled_without_namespace_enabled():
     namespaces = {}
-    pods = get_all_pods(namespaces)
+    pods = get_all_pods(namespaces, {})
     assert 'nginx' in pods['replicaset']['disabled']
     assert 'disabled' not in pods['replicaset']['disabled']
 
 @my_vcr.use_cassette()
 def test_get_all_pods_with_pods_that_dont_have_created_by():
     namespaces = {'test': {}}
-    pods = get_all_pods(namespaces)
+    pods = get_all_pods(namespaces, {})
     assert 'nginx-pod' not in pods['replicaset']['test']
 
 def test_generate_watch():
@@ -395,32 +401,6 @@ def test_sending_a_watch_to_watcher():
     assert watches['metricbeat']['metadata']['message'] == 'No metricbeat data has been recieved in the last 5 minutes! <https://kibana.example.com|kibana>'
     assert watches['metricbeat']['actions']['email_admin']['email']['to'] == ['michael.russell@elastic.co']
     assert watches['metricbeat']['actions']['email_admin']['throttle_period_in_millis'] == 3600000
-
-    # When sending the watches again they should not be updated
-    current_watches = get_current_watches(es)
-    updated = send_watches(watches, current_watches, es)
-    assert len(updated) == 0
-
-@my_vcr.use_cassette()
-def test_sending_a_watch_to_watcher_with_overridden_metricbeat_index_pattern():
-    defaults = {
-        "kibana_url": "https://kibana.example.com",
-        "alerts": {
-            "email": "michael.russell@elastic.co",
-            "slack": "@michael.russell"
-        },
-        "metricbeat_index_pattern": 'overridden-pattern-*'
-    }
-
-    es = connect_to_es()
-    current_watches = get_current_watches(es)
-    watches = main(es, defaults)
-    updated = send_watches(watches, current_watches, es)
-    assert len(updated) > 0
-    assert 'test.nginx' in watches
-    assert 'metricbeat' in watches
-    assert watches['metricbeat']['input']['search']['request']['indices'][0] == 'overridden-pattern-*'
-    assert watches['test.nginx']['input']['search']['request']['indices'][0] == 'overridden-pattern-*'
 
     # When sending the watches again they should not be updated
     current_watches = get_current_watches(es)

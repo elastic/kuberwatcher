@@ -4,7 +4,7 @@ kind: Namespace
 metadata:
   name: disabled
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
@@ -29,7 +29,7 @@ spec:
         name: nginx
         resources: {}
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
