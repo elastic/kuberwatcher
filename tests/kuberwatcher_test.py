@@ -55,7 +55,7 @@ watcher.goodbye: 'goodbye'
 watcher.alerts.slack: 'slack'
 watcher.alerts.email: 'email'
 '''
-    config = unflatten(yaml.load(config))
+    config = unflatten(yaml.safe_load(config))
     assert config['watcher']['hello'] == 'hello'
     assert config['watcher']['goodbye'] == 'goodbye'
     assert config['watcher']['alerts']['slack'] == 'slack'
@@ -210,7 +210,7 @@ def test_conditionally_adding_docs_field_for_email():
         'namespace': 'namespace',
         'pod_type': 'replicaset',
         'alerts': {
-            'email': 'michael.russell@elastic.co'
+            'email': 'kuberwatcher-alerts@example.com'
         }
     }
     event = {
@@ -231,7 +231,7 @@ def test_conditionally_not_adding_docs_field_for_email():
         'namespace': 'namespace',
         'pod_type': 'replicaset',
         'alerts': {
-            'email': 'michael.russell@elastic.co'
+            'email': 'kuberwatcher-alerts@example.com'
         }
     }
     event = {
@@ -277,7 +277,7 @@ def test_getting_namespace_with_overriden_config():
       'window': '300s',
       'failures': 3,
       'alerts': {
-        'email': 'michael.russell@elastic.co',
+        'email': 'kuberwatcher-alerts@example.com',
         'slack': '@michael.russell'
       }
     }
@@ -289,7 +289,7 @@ def test_getting_email_alerts_disabled_when_overriding_alerts():
     load_config()
     defaults = {
       'alerts': {
-        'email': 'michael.russell@elastic.co',
+        'email': 'kuberwatcher-alerts@example.com',
         'slack': '@michael.russell'
       }
     }
@@ -366,7 +366,7 @@ def test_real_watch_that_did_actually_change():
     defaults = {
         "kibana_url": "https://kibana.example.com",
         "alerts": {
-            "email": "michael.russell@elastic.co",
+            "email": "kuberwatcher-alerts@example.com",
             "slack": "@michael.russell",
         },
         "failures": 3,
@@ -387,7 +387,7 @@ def test_sending_a_watch_to_watcher():
     defaults = {
         "kibana_url": "https://kibana.example.com",
         "alerts": {
-            "email": "michael.russell@elastic.co",
+            "email": "kuberwatcher-alerts@example.com",
             "slack": "@michael.russell"
         }
     }
@@ -399,7 +399,7 @@ def test_sending_a_watch_to_watcher():
     assert 'test.nginx' in watches
     assert 'metricbeat' in watches
     assert watches['metricbeat']['metadata']['message'] == 'No metricbeat data has been recieved in the last 5 minutes! <https://kibana.example.com|kibana>'
-    assert watches['metricbeat']['actions']['email_admin']['email']['to'] == ['michael.russell@elastic.co']
+    assert watches['metricbeat']['actions']['email_admin']['email']['to'] == ['kuberwatcher-alerts@example.com']
     assert watches['metricbeat']['actions']['email_admin']['throttle_period_in_millis'] == 3600000
 
     # When sending the watches again they should not be updated
@@ -409,11 +409,11 @@ def test_sending_a_watch_to_watcher():
 
 def test_add_alerts():
     alerts = {
-        "email": "michael.russell@elastic.co,micky@elastic.co",
+        "email": "kuberwatcher-alerts@example.com,kuberwatcher-other-team@example.com",
         "slack": "@michael.russell,@micky"
     }
     result = add_alerts(copy.deepcopy(metricbeat_template), alerts, 0)
-    assert result['actions']['email_admin']['email']['to'] == ['michael.russell@elastic.co', 'micky@elastic.co']
+    assert result['actions']['email_admin']['email']['to'] == ['kuberwatcher-alerts@example.com', 'kuberwatcher-other-team@example.com']
     assert result['actions']['notify-slack']['slack']['message']['to'] == ['@michael.russell', '@micky']
 
 def test_add_alerts_with_only_slack():
@@ -426,24 +426,24 @@ def test_add_alerts_with_only_slack():
 
 def test_add_alerts_with_only_email():
     alerts = {
-        "email": "michael.russell@elastic.co",
+        "email": "kuberwatcher-alerts@example.com",
     }
     result = add_alerts(copy.deepcopy(metricbeat_template), alerts, 0)
     assert 'notify-slack' not in result['actions']
-    assert result['actions']['email_admin']['email']['to'] == ['michael.russell@elastic.co']
+    assert result['actions']['email_admin']['email']['to'] == ['kuberwatcher-alerts@example.com']
 
 def test_add_alerts_with_reply_to():
     alerts = {
-        "email": "michael.russell@elastic.co",
+        "email": "kuberwatcher-alerts@example.com",
     }
     result = add_alerts(copy.deepcopy(metricbeat_template), alerts, 0, 'reply@elastic.co')
     assert 'notify-slack' not in result['actions']
-    assert result['actions']['email_admin']['email']['to'] == ['michael.russell@elastic.co']
+    assert result['actions']['email_admin']['email']['to'] == ['kuberwatcher-alerts@example.com']
     assert result['actions']['email_admin']['email']['reply_to'] == ['reply@elastic.co']
 
 def test_add_alerts_with_overriden_throttle_period():
     alerts = {
-        "email": "michael.russell@elastic.co"
+        "email": "kuberwatcher-alerts@example.com"
     }
     result = add_alerts(copy.deepcopy(metricbeat_template), alerts, 123456)
     assert result['actions']['email_admin']['throttle_period_in_millis'] == 123456

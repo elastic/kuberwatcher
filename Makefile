@@ -49,7 +49,7 @@ clean:
 
 test: 
 	export CI=$${CI:-'false'} && \
-	docker run --net=host -e ES_HOSTS="http://127.0.0.1:9200" -v ~/.kube:/.kube/ --user=$$UID -e CI=$$CI -i -v "$$PWD":/app -w /app python:3.6 /usr/bin/make test-python
+	docker run --net=host -e ES_HOSTS="http://127.0.0.1:9200" -v ~/.kube:/.kube/ --user=$$UID -e CI=$$CI -i -v "$$PWD":/app -w /app python:3.9 /usr/bin/make test-python
 
 fixtures:
 	cluster=$$(kubectl config current-context) && \

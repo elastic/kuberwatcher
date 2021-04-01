@@ -1,3 +1,3 @@
-alerts.email: 'michael.russell@elastic.co'
-alerts.slack: '@michael.russell'
+alerts.email: 'kuberwatcher-alerts@example.com'
+alerts.slack: 'slack-channel-name'
 kibana_url: 'https://kibana.example.com'
