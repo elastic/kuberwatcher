@@ -114,6 +114,8 @@ kind_dashes_map = {
 }
 
 def base_name(name, kind):
+    if kind not in kind_dashes_map:
+        return None
     return name.rsplit('-', kind_dashes_map[kind])[0]
 
 def add_alerts(template, alerts, throttle, reply_to=None):
@@ -150,12 +152,17 @@ def get_all_pods(namespaces, defaults):
         except:
             print('Could not determine the kind for:', name)
 
-        if kind:
-            kind = kind.lower()
-            pod_group_name = base_name(name, kind)
-            annotations = unflatten(i.metadata.annotations)
-            config = merge_defaults(namespaces.get(namespace, defaults), annotations.get('watcher', {}))
-            kinds[kind][namespace][pod_group_name] = config
+        if not kind:
+            continue
+
+        kind = kind.lower()
+        pod_group_name = base_name(name, kind)
+        if not pod_group_name:
+            continue
+
+        annotations = unflatten(i.metadata.annotations)
+        config = merge_defaults(namespaces.get(namespace, defaults), annotations.get('watcher', {}))
+        kinds[kind][namespace][pod_group_name] = config
         
     return kinds
 

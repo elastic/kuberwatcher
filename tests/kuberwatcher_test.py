@@ -251,6 +251,9 @@ def test_kubernetes_base_name():
     assert base_name('metricbeat-jlrb7', 'daemonset') == 'metricbeat'
     assert base_name('vault-backup-vault-poc-vault-test-1514995200-c4rch', 'job') == 'vault-backup-vault-poc-vault-test'
 
+def test_kubernetes_base_name_with_unsupported_kind():
+    assert base_name('fakeity-fake-fake', 'challenge') == None
+
 
 def test_generating_pod_regex():
     assert pod_regex('test-nginx', 'replicaset') == 'test-nginx-[^-]+-[^-]+'
@@ -302,6 +305,12 @@ def test_get_all_pods():
     namespaces = {'test': {}}
     pods = get_all_pods(namespaces, {})
     assert 'nginx' in pods['replicaset']['test']
+
+@my_vcr.use_cassette()
+def test_get_all_pods_with_unsupported_kind():
+    namespaces = {'test': {}}
+    pods = get_all_pods(namespaces, {})
+    assert 'challenge' not in pods
 
 @my_vcr.use_cassette()
 def test_get_all_pods_with_global_defaults():
