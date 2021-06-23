@@ -65,6 +65,7 @@ def render_template(
         # Filter out running and pending jobs since we just want to find the latest completed results
         template['input']['search']['request']['body']['query']['bool']['must_not'].append({'match': {'kubernetes.pod.status.phase': 'running'}})
         template['input']['search']['request']['body']['query']['bool']['must_not'].append({'match': {'kubernetes.pod.status.phase': 'pending'}})
+        template['input']['search']['request']['body']['query']['bool']['must_not'].append({'match': {'kubernetes.pod.status.phase': 'succeeded'}})
 
         # Cronjob pods contain a unix timestamp in their name. By sorting the pods by name we can get the most recent jobs at the top of the results
         template['input']['search']['request']['body']['sort'] = [{"kubernetes.pod.name" : {"order" : "desc", "mode" : "max"}}]
