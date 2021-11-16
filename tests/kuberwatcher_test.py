@@ -1,5 +1,5 @@
 from kuberwatcher import *
-import pystache
+import chevron
 import pytest
 import vcr
 import certifi
@@ -12,7 +12,7 @@ my_vcr = vcr.VCR(
 )
 
 def mustache_render(template, event):
-    return pystache.render(template, {'ctx':{'payload':{'aggregations': {'result': {'hits': {'hits': {'0': {'_source': event }}}}}}}})
+    return chevron.render(template, {'ctx':{'payload':{'aggregations': {'result': {'hits': {'hits': {'0': {'_source': event }}}}}}}})
 
 def test_template_defaults_with_no_outputs():
     watch = {
@@ -340,7 +340,7 @@ def test_get_all_pods_with_pods_that_dont_have_created_by():
     assert 'nginx-pod' not in pods['replicaset']['test']
 
 def test_generate_watch():
-    pods = { 
+    pods = {
         'replicaset': {
             'test': {
                 'nginx': {}
