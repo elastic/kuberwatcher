@@ -245,6 +245,54 @@ def send_watches(watches, current_watches, es):
             updated.append(watch)
     return updated
 
+def delete_watches(watches, es): # pragma: nocover
+    xpack = XPackClient(es)
+    for watch in watches:
+        print('Removing: {0}'.format(watch))
+        xpack.watcher.delete_watch(watch)
+
+def find_old_watches(watches, current_watches):
+    old_watches = []
+    for watch, template in current_watches.items():
+        # Skip Watches that we found this run
+        if watch in watches:
+            continue
+
+        # Skip any watches that have no metadata
+        if "metadata" not in template:
+            continue
+
+        # Remove Kuberwatcher managed Watches that are no longer needed
+        if template["metadata"].get("kuberwatcher") == "true":
+            old_watches.append(watch)
+            continue
+
+        # Fuzzy detection to clean up Watchers managed by older versions of Kuberwatcher
+        if "regex" not in template["metadata"]:
+            continue
+
+        try:
+            if (
+                "not ready pod(s) <"
+                in template["actions"]["notify-slack"]["slack"]["message"]["text"]
+            ):
+                old_watches.append(watch)
+                continue
+        except KeyError:
+            pass
+
+        try:
+            if (
+                "not ready pod(s) <"
+                in template["actions"]["email_admin"]["body"]["html"]
+            ):
+                old_watches.append(watch)
+                continue
+        except KeyError:
+            pass
+
+    return old_watches
+
 def es_connection_config():
     es_hosts = os.environ.get('ES_HOSTS', 'http://elasticsearch:9200')
     es_client_cert_path = os.environ.get('ES_CLIENT_CERT_PATH')
@@ -288,3 +336,5 @@ if __name__ == "__main__": # pragma: nocover
     current_watches = get_current_watches(es)
     watches = main(es, defaults)
     send_watches(watches, current_watches, es)
+    old_watches = find_old_watches(watches, current_watches)
+    delete_watches(old_watches, es)
