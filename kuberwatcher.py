@@ -245,6 +245,23 @@ def send_watches(watches, current_watches, es):
             updated.append(watch)
     return updated
 
+def cleanup_watches(watches, current_watches, es):
+    xpack = XPackClient(es)
+    updated = []
+    for watch, template in current_watches.items():
+        if watch in watches:
+            continue
+
+        # Fuzzy detection to clean up Watchers managed by older versions of Kuberwatcher
+        if "metadata" in template and "regex" in template["metadata"]:
+            try:
+                if ("not ready pod(s) <" in template["actions"]["notify-slack"]["slack"]["message"]["text"]) or \
+                   ("not ready pod(s) <" in template["actions"]["email_admin"]["body"]["html"]):
+                    print('Removing: {0}'.format(watch))
+                    xpack.watcher.delete_watch(watch)
+            except KeyError:
+                pass
+
 def es_connection_config():
     es_hosts = os.environ.get('ES_HOSTS', 'http://elasticsearch:9200')
     es_client_cert_path = os.environ.get('ES_CLIENT_CERT_PATH')
@@ -288,3 +305,4 @@ if __name__ == "__main__": # pragma: nocover
     current_watches = get_current_watches(es)
     watches = main(es, defaults)
     send_watches(watches, current_watches, es)
+    cleanup_watches(watches, current_watches, es)
