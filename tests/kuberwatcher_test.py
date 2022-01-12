@@ -489,3 +489,105 @@ def test_es_client_config_with_ca_certs_set(monkeypatch):
     es_hosts, es_client_kwargs = es_connection_config()
 
     assert es_client_kwargs.get('ca_certs') == mock_ca_cert_path
+
+def test_find_old_watch():
+    watches = {"latest": {}}
+    current_watches = {
+        "old": {"metadata": {"kuberwatcher": "true"}},
+        "latest": {},
+    }
+
+    old_watches = find_old_watches(watches, current_watches)
+
+    assert old_watches == ["old"]
+
+
+def test_find_legacy_old_watch_email():
+    watches = {"latest": {}}
+    current_watches = {
+        "old": {
+            "metadata": {"regex": "test"},
+            "actions": {
+                "email_admin": {
+                    "body": {"html": "Kuberwatcher found 3 not ready pod(s) < just now"}
+                }
+            },
+        },
+        "latest": {},
+    }
+
+    old_watches = find_old_watches(watches, current_watches)
+
+    assert old_watches == ["old"]
+
+def test_find_legacy_old_watch_slack():
+    watches = {"latest": {}}
+    current_watches = {
+        "old": {
+            "metadata": {"regex": "test"},
+            "actions": {
+                "notify-slack": {
+                    "slack": {
+                        "message": {
+                            "text": "Kuberwatcher found 3 not ready pod(s) < just now"
+                        }
+                    }
+                }
+            },
+        },
+        "latest": {},
+    }
+
+    old_watches = find_old_watches(watches, current_watches)
+
+    assert old_watches == ["old"]
+
+def test_find_old_watch_no_metadata():
+    watches = {"latest": {}}
+    current_watches = {
+        "old": {
+            "actions": {
+                "notify-slack": {
+                    "slack": {"message": {"text": "Important watcher alert!"}}
+                }
+            },
+        },
+        "latest": {},
+    }
+
+    old_watches = find_old_watches(watches, current_watches)
+
+    assert old_watches == []
+
+def test_find_old_watch_not_our_metadata():
+    watches = {"latest": {}}
+    current_watches = {
+        "old": {
+            "metadata": {
+                "test": "hello",
+            },
+            "actions": {
+                "notify-slack": {
+                    "slack": {"message": {"text": "Important watcher alert!"}}
+                }
+            },
+        },
+        "latest": {},
+    }
+
+    old_watches = find_old_watches(watches, current_watches)
+
+    assert old_watches == []
+
+def test_find_old_watch_without_our_alert_actions():
+    watches = {"latest": {}}
+    current_watches = {
+        "old": {
+            "metadata": {"regex": "test"},
+        },
+        "latest": {},
+    }
+
+    old_watches = find_old_watches(watches, current_watches)
+
+    assert old_watches == []

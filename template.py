@@ -24,6 +24,7 @@ k8s_template = {
     "name": "",
     "namespace": "",
     "regex": "",
+    "kuberwatcher": "true",
     "kibana_url": "",
     "kibana_dashboard": "",
     "docs": "",
