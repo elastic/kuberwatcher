@@ -68,11 +68,18 @@ def render_template(
 
         # Cronjob pods contain a unix timestamp in their name. By sorting the pods by name we can get the most recent jobs at the top of the results
         template['input']['search']['request']['body']['sort'] = [{"kubernetes.pod.name" : {"order" : "desc", "mode" : "max"}}]
-        template['condition'] = {
-            "script" : {
+        template["condition"] = {
+            "script": {
                 "lang": "painless",
-                # Alert if there aren't any succesful jobs in our result. The default value of 2 means we need 2 failed jobs in a row before alerting 
-                "source" : "for (h in ctx.payload.hits.hits) { if (h._source.kubernetes.pod.status.phase == 'succeeded') return false; } return true;"
+                # Don't alert if hits.hits does not have any results as this can produce false positives
+                # If any of the jobs have suceeded don't send an alert. The
+                # query returns the most recent job_failures amount of pods
+                # (default 2). So if any of them passed we don't need to alert
+                # yet.
+                "source": "if (ctx.payload.hits.hits.size() == 0) return false; "
+                + "for (h in ctx.payload.hits.hits) { "
+                + "if (h._source.kubernetes.pod.status.phase == 'succeeded') return false; } "
+                + "return true;",
             }
         }
 
