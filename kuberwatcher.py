@@ -223,12 +223,9 @@ def get_current_watches(es):
     watcher_client = WatcherClient(es)
 
     watches = {}
-    try:
-        for watch in watcher_client.query_watches(body={'size': 1000})['watches']:
-            watches[watch['_id']] = watch['watch']
-    except NotFoundError as err:
-        # If we get back a 404 then no watches have been created yet
-        return watches
+
+    for watch in watcher_client.query_watches(body={'size': 1000})['watches']:
+        watches[watch['_id']] = watch['watch']
 
     return watches
 
