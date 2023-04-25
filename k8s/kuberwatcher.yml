@@ -10,7 +10,7 @@ data:
     alerts.slack: alerts
     kibana_url: https://kibana.example.com
 ---
-apiVersion: batch/v1beta1
+apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: kuberwatcher
@@ -64,7 +64,7 @@ spec:
           serviceAccount: kuberwatcher
           serviceAccountName: kuberwatcher
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: kuberwatcher-role
@@ -83,7 +83,7 @@ kind: ServiceAccount
 metadata:
   name: kuberwatcher
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: kuberwatcher-rolebinding
