@@ -5,7 +5,7 @@ from collections import defaultdict
 import json
 import urllib.parse
 from elasticsearch import Elasticsearch
-from elasticsearch.client.xpack import XPackClient
+from elasticsearch.client.watcher import WatcherClient
 from elasticsearch.exceptions import NotFoundError
 from template import k8s_template, metricbeat_template
 import certifi
@@ -170,7 +170,7 @@ def get_all_pods(namespaces, defaults):
         annotations = unflatten(i.metadata.annotations)
         config = merge_defaults(namespaces.get(namespace, defaults), annotations.get('watcher', {}))
         kinds[kind][namespace][pod_group_name] = config
-        
+
     return kinds
 
 
@@ -220,14 +220,12 @@ def load_config(): # pragma: nocover
         kube_config.load_kube_config()
 
 def get_current_watches(es):
+    watcher_client = WatcherClient(es)
+
     watches = {}
-    try:
-        for watch in es.search(index=".watches",size=1000)['hits']['hits']:
-            watches[watch['_id']] = watch['_source']
-            del watches[watch['_id']]['status']
-    except NotFoundError as err:
-        # If we get back a 404 then no watches have been created yet
-        return watches
+
+    for watch in watcher_client.query_watches(body={'size': 1000})['watches']:
+        watches[watch['_id']] = watch['watch']
 
     return watches
 
@@ -244,19 +242,19 @@ def watch_changed(watch, template, watches):
         return True
 
 def send_watches(watches, current_watches, es):
-    xpack = XPackClient(es)
+    watcher_client = WatcherClient(es)
     updated = []
     for watch, template in watches.items():
         if watch_changed(watch, template, current_watches):
-            xpack.watcher.put_watch(watch, template)
+            watcher_client.put_watch(id=watch, body=template)
             updated.append(watch)
     return updated
 
 def delete_watches(watches, es): # pragma: nocover
-    xpack = XPackClient(es)
+    watcher_client = WatcherClient(es)
     for watch in watches:
         print('Removing: {0}'.format(watch))
-        xpack.watcher.delete_watch(watch)
+        watcher_client.delete_watch(id=watch)
 
 def find_old_watches(watches, current_watches):
     old_watches = []

@@ -3,9 +3,9 @@ default: build
 SHELL:=/bin/bash -eu
 export PATH := ./bin:./venv/bin:$(PATH)
 
-VERSION = 7.11.1
+VERSION = 7.17.9
 IMAGE = docker.elastic.co/kuberwatcher/kuberwatcher:${VERSION}
-STACK_VERSION = 7.1.1
+STACK_VERSION = 7.17.9
 PASSWORD = changeme
 
 build:
@@ -21,7 +21,7 @@ deps:
 	echo 'Waiting for Kibana to start'
 	until curl -u elastic:$(PASSWORD) -Is 'localhost:5601/api/status'; do printf '.'; sleep 1; done
 	echo 'Activating X-Pack trial license'
-	until curl -u elastic:$(PASSWORD) -Is -XPOST 'localhost:9200/_xpack/license/start_trial?acknowledge=true' ; do printf '.' ; sleep 1; done
+	until curl -u elastic:$(PASSWORD) -Is -XPOST 'localhost:9200/_license/start_trial?acknowledge=true' ; do printf '.' ; sleep 1; done
 
 run: build
 	docker run --rm -ti -v ${HOME}/.minikube:${HOME}/.minikube -v ~/.kube:/root/.kube/ --link kuberwatcher_es:elasticsearch -v $$(PWD):/app -w /app -e ES_PASSWORD="${ES_PASSWORD}" -e ES_USERNAME="${ES_USERNAME}" -e ES_HOSTS="${ES_HOSTS}" ${IMAGE}
@@ -49,7 +49,7 @@ clean:
 
 test: 
 	export CI=$${CI:-'false'} && \
-	docker run --net=host -e ES_HOSTS="http://127.0.0.1:9200" -v ~/.kube:/.kube/ --user=$$UID -e CI=$$CI -i -v "$$PWD":/app -w /app python:3.9 /usr/bin/make test-python
+	docker run --net=host -e ES_HOSTS="http://127.0.0.1:9200" -v ~/.kube:/.kube/ --user=$$UID -e CI=$$CI -i -v "$$PWD":/app -w /app python:3.10 /usr/bin/make test-python
 
 fixtures:
 	cluster=$$(kubectl config current-context) && \
