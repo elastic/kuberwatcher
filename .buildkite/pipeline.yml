@@ -1,0 +1,7 @@
+steps:
+  - label: ":package: kuberwatcher test"
+    key: kuberwatcher
+    commands:
+      - .buildkite/scripts/run-tests.sh
+    agents:
+      provider: "gcp"
