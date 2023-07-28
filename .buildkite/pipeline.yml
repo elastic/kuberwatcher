@@ -1,7 +1,17 @@
 steps:
-  - label: ":package: kuberwatcher test"
-    key: kuberwatcher
+  - label: ":package: kuberwatcher build and test"
+    key: kuberwatcher-pr
+    branches: "!master"
     commands:
       - .buildkite/scripts/run-tests.sh
+      - .buildkite/scripts/docker-image-build.sh
+    agents:
+      provider: "gcp"
+
+  - label: ":package: kuberwatcher push image"
+    key: kuberwatcher-master
+    branches: "master"
+    commands:
+      - .buildkite/scripts/docker-image-push.sh
     agents:
       provider: "gcp"
