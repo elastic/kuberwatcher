@@ -7,8 +7,8 @@ if [[ "$BUILDKITE_PIPELINE_SLUG" == "kuberwatcher" ]]; then
 
     echo "------ Setting up Prod Vault -------"
 
-    VAULT_ROLE_ID=$(vault read --field=role_id secret/ci/elastic-infra/vault-prod)
-    VAULT_SECRET_ID=$(vault read --field=secret_id secret/ci/elastic-infra/vault-prod)
+    VAULT_ROLE_ID=$(vault read --field=role_id secret/ci/kuberwatcher/vault-prod)
+    VAULT_SECRET_ID=$(vault read --field=secret_id secret/ci/kuberwatcher/vault-prod)
     export VAULT_ADDR=https://secrets.elastic.co:8200
 
     # Clear the previous token or it will cause the `vault write` below to fail with:
