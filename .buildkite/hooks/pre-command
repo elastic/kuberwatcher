@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -eo pipefail
+
+if [[ "$BUILDKITE_PIPELINE_SLUG" == "kuberwatcher" ]]; then
+
+    set +x
+
+    echo "------ Setting up Prod Vault -------"
+
+    VAULT_ROLE_ID=$(vault read --field=role_id secret/ci/elastic-infra/vault-prod)
+    VAULT_SECRET_ID=$(vault read --field=secret_id secret/ci/elastic-infra/vault-prod)
+    export VAULT_ADDR=https://secrets.elastic.co:8200
+
+    # Clear the previous token or it will cause the `vault write` below to fail with:
+    # "error performing token check: failed to look up namespace from the token: no namespace"
+
+    unset VAULT_TOKEN
+
+    VAULT_TOKEN=$(vault write -field=token auth/approle/login role_id="$VAULT_ROLE_ID" secret_id="$VAULT_SECRET_ID")
+    export VAULT_TOKEN
+fi
